@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Flowchart for the DNS Query and Resolution Simulator mini-project.">
+  <title>DNS Query and Resolution Simulator — Flowchart</title>
+  <style>
+    :root {
+      color-scheme: light;
+      font-family: "Segoe UI", Arial, sans-serif;
+      color: #203247;
+      background: #f3f6fa;
+    }
+
+    body {
+      margin: 0;
+      padding: 2rem 1rem;
+    }
+
+    main {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: clamp(1.25rem, 4vw, 2.5rem);
+      background: #fff;
+      border: 1px solid #dce4ed;
+      border-radius: 14px;
+      box-shadow: 0 12px 32px rgb(26 48 73 / 9%);
+    }
+
+    h1 {
+      margin: 0 0 0.5rem;
+      color: #17324d;
+      font-size: clamp(1.5rem, 4vw, 2.15rem);
+    }
+
+    .subtitle {
+      margin: 0 0 1.75rem;
+      color: #526579;
+      line-height: 1.6;
+    }
+
+    .diagram {
+      overflow-x: auto;
+      padding: 1rem 0;
+      text-align: center;
+    }
+
+    .mermaid {
+      min-width: 620px;
+    }
+
+    .instructions {
+      margin-top: 1.5rem;
+      padding: 1rem 1.25rem;
+      background: #f3f7fb;
+      border-left: 4px solid #37658f;
+      border-radius: 4px;
+      line-height: 1.6;
+    }
+
+    .instructions h2 {
+      margin: 0 0 0.5rem;
+      font-size: 1.05rem;
+    }
+
+    .instructions p {
+      margin: 0;
+    }
+
+    a {
+      color: #245c91;
+    }
+
+    @media print {
+      body {
+        padding: 0;
+        background: #fff;
+      }
+
+      main {
+        max-width: none;
+        border: 0;
+        box-shadow: none;
+      }
+    }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+</head>
+<body>
+  <main>
+    <h1>DNS Query and Resolution Simulator</h1>
+    <p class="subtitle">Domain validation, TTL-aware DNS caching, simulated database lookup, and query history.</p>
+    <section class="diagram" aria-label="DNS query and resolution flowchart">
+      <div id="flowchart" class="mermaid"></div>
+    </section>
+    <section class="instructions">
+      <h2>Preview and export</h2>
+      <p>
+        This file renders in a browser with an internet connection (Mermaid.js is loaded from jsDelivr).
+        To export as PNG or SVG, copy the Mermaid source from <a href="dns_flowchart.md">dns_flowchart.md</a>
+        into the <a href="https://mermaid.live">Mermaid Live Editor</a> and select
+        <strong>Actions → PNG</strong> or <strong>Actions → SVG</strong>.
+      </p>
+    </section>
+  </main>
+  <script type="text/plain" id="diagram-source">
+%% Main flow: validate input, then choose a cache or database resolution path.
+flowchart TD
+    START([START]) --> INPUT[/Enter domain name/]
+    INPUT --> VALID{Is the domain name valid?}
+    VALID -->|NO| INVALID[/Display validation error/]
+    INVALID --> INPUT
+    VALID -->|YES| CHECK_CACHE[Check DNS cache]
+    CHECK_CACHE --> CACHE_VALID{Is a cached entry present<br/>and its TTL unexpired?}
+
+    %% A hit returns the cached answer directly; it never searches the database.
+    CACHE_VALID -->|YES / HIT| CACHE_RETURN[/Return cached IP address/]
+    CACHE_RETURN --> UPDATE_STATS[Update query statistics]
+    
+    %% A missing or expired entry is a miss and starts simulated DNS resolution.
+    CACHE_VALID -->|NO / MISS| DATABASE[Search predefined DNS database]
+    DATABASE --> FOUND{Was the domain found?}
+
+    %% Successful answers alone are cached, with the configured TTL.
+    FOUND -->|YES| RETRIEVE[Retrieve the domain IP address]
+    RETRIEVE --> STORE[Store successful result in DNS cache with TTL]
+    STORE --> DISPLAY_IP[/Display resolved IP address/]
+    DISPLAY_IP --> UPDATE_STATS
+
+    %% NXDOMAIN is reported but not cached; all outcomes share statistics/history.
+    FOUND -->|NO| DISPLAY_NX[/Display NXDOMAIN simulation result<br/>Do not cache failed result/]
+    DISPLAY_NX --> UPDATE_STATS
+
+    UPDATE_STATS --> RECORD_HISTORY[Record query in history]
+    RECORD_HISTORY --> END([END])
+
+    %% Color coding distinguishes decisions, routine processing, success, hits, and errors.
+    classDef process fill:#e8f1fb,stroke:#37658f,color:#17324d,stroke-width:1.5px;
+    classDef inputOutput fill:#eef3f8,stroke:#667d94,color:#203247,stroke-width:1.5px;
+    classDef decision fill:#fff3cd,stroke:#b88719,color:#49370c,stroke-width:1.5px;
+    classDef success fill:#e3f4e8,stroke:#39834c,color:#173d22,stroke-width:1.5px;
+    classDef cacheHit fill:#dff3ef,stroke:#238477,color:#123d38,stroke-width:1.5px;
+    classDef error fill:#fde8e7,stroke:#bd4a45,color:#5b201d,stroke-width:1.5px;
+    classDef terminal fill:#263b53,stroke:#17283a,color:#ffffff,stroke-width:2px;
+
+    class INPUT,INVALID,CACHE_RETURN,DISPLAY_IP,DISPLAY_NX inputOutput;
+    class CHECK_CACHE,DATABASE,RETRIEVE,STORE,UPDATE_STATS,RECORD_HISTORY process;
+    class VALID,CACHE_VALID,FOUND decision;
+    class CACHE_RETURN cacheHit;
+    class RETRIEVE,STORE,DISPLAY_IP success;
+    class INVALID,DISPLAY_NX error;
+    class START,END terminal;
+  </script>
+  <script>
+    if (typeof mermaid === "undefined") {
+      document.getElementById("flowchart").textContent =
+        "Mermaid.js could not be loaded. Check your internet connection and reload this page.";
+    } else {
+      mermaid.initialize({
+        startOnLoad: false,
+        securityLevel: "strict",
+        theme: "base",
+        flowchart: { htmlLabels: true, curve: "linear" }
+      });
+      document.getElementById("flowchart").textContent =
+        document.getElementById("diagram-source").textContent.trim();
+      mermaid.run({ nodes: [document.getElementById("flowchart")] });
+    }
+  </script>
+</body>
+</html>
